@@ -1,0 +1,43 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Load historical data
+# Replace 'your_data.csv' with your actual file path
+data = pd.read_csv("your_data.csv")
+data['Date'] = pd.to_datetime(data['Date'])
+data.set_index('Date', inplace=True)
+
+# Parameters
+length = 21
+threshold = 1.5
+
+# Calculate EMA and ATR
+data['EMA'] = data['Close'].ewm(span=length, adjust=False).mean()
+data['ATR'] = data['High'] - data['Low']  # Simplified ATR; use a library like TA-Lib for full ATR if needed
+data['ATR'] = data['ATR'].rolling(window=length).mean()
+
+# Calculate bands
+data['Upper_Band'] = data['EMA'] + threshold * data['ATR']
+data['Lower_Band'] = data['EMA'] - threshold * data['ATR']
+
+# Determine trends
+data['Trend'] = np.where(data['Close'] > data['Upper_Band'], 'Bullish', 
+                         np.where(data['Close'] < data['Lower_Band'], 'Bearish', 'Neutral'))
+
+# Plot the data
+plt.figure(figsize=(14, 7))
+plt.plot(data['Close'], label='Close Price', color='black', alpha=0.6)
+plt.plot(data['EMA'], label='EMA', color='blue', linestyle='--')
+plt.plot(data['Upper_Band'], label='Upper Band', color='green', linestyle='-')
+plt.plot(data['Lower_Band'], label='Lower Band', color='red', linestyle='-')
+
+# Highlight bullish and bearish trends
+plt.fill_between(data.index, data['Upper_Band'], data['Lower_Band'], 
+                 where=(data['Trend'] == 'Bullish'), color='green', alpha=0.2, label='Bullish Trend')
+plt.fill_between(data.index, data['Upper_Band'], data['Lower_Band'], 
+                 where=(data['Trend'] == 'Bearish'), color='red', alpha=0.2, label='Bearish Trend')
+
+plt.title('LeMan Trend Indicator')
+plt.legend()
+plt.show()

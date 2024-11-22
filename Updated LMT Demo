@@ -1,0 +1,38 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Load historical data
+# Replace 'your_data.csv' with your actual file path
+data = pd.read_csv("your_data.csv")
+data['Date'] = pd.to_datetime(data['Date'])
+data.set_index('Date', inplace=True)
+
+# Parameters
+fast_length = 13
+slow_length = 34
+
+# Calculate Fast Line and Slow Line (e.g., using EMA)
+data['Fast_Line'] = data['Close'].ewm(span=fast_length, adjust=False).mean()
+data['Slow_Line'] = data['Close'].ewm(span=slow_length, adjust=False).mean()
+
+# Generate buy/sell signals based on crossover
+data['Signal'] = np.where(data['Fast_Line'] > data['Slow_Line'], 1, -1)
+data['Signal_Change'] = data['Signal'].diff()
+
+# Plotting
+plt.figure(figsize=(14, 7))
+plt.plot(data['Close'], label='Close Price', color='black', alpha=0.6)
+plt.plot(data['Fast_Line'], label='Fast Line (EMA 13)', color='green', linestyle='-')
+plt.plot(data['Slow_Line'], label='Slow Line (EMA 34)', color='red', linestyle='-')
+
+# Mark buy/sell points
+buy_signals = data[data['Signal_Change'] == 2]
+sell_signals = data[data['Signal_Change'] == -2]
+
+plt.scatter(buy_signals.index, buy_signals['Close'], label='Buy Signal', color='blue', marker='^', alpha=1)
+plt.scatter(sell_signals.index, sell_signals['Close'], label='Sell Signal', color='orange', marker='v', alpha=1)
+
+plt.title('LeMan Trend Indicator - Crossover Signals')
+plt.legend()
+plt.show()
